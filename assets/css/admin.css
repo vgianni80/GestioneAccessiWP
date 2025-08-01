@@ -1,0 +1,428 @@
+/**
+ * Stili admin per il plugin Gestione Accessi BluTrasimeno
+ * 
+ * @package GestioneAccessiBT
+ * @since 1.3.0
+ */
+
+/* Container principale */
+.gabt-admin-container {
+    max-width: 1200px;
+    margin: 20px 0;
+}
+
+/* Header pagine */
+.gabt-page-header {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.gabt-page-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+    color: #23282d;
+}
+
+.gabt-page-header .description {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Breadcrumb */
+.gabt-breadcrumb {
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.gabt-breadcrumb a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.gabt-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.gabt-breadcrumb .separator {
+    margin: 0 8px;
+    color: #666;
+}
+
+/* Cards dashboard */
+.gabt-dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.gabt-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.gabt-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    color: #23282d;
+}
+
+.gabt-card .stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #0073aa;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.gabt-card .stat-label {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Form styles */
+.gabt-form {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.gabt-form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.gabt-form-row .gabt-form-field {
+    flex: 1;
+}
+
+.gabt-form-field {
+    margin-bottom: 20px;
+}
+
+.gabt-form-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.gabt-form-field input,
+.gabt-form-field select,
+.gabt-form-field textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.gabt-form-field input:focus,
+.gabt-form-field select:focus,
+.gabt-form-field textarea:focus {
+    border-color: #0073aa;
+    outline: none;
+    box-shadow: 0 0 0 1px #0073aa;
+}
+
+.gabt-form-field .description {
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.gabt-form-field .required {
+    color: #d63638;
+}
+
+/* Tabelle */
+.gabt-table {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.gabt-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.gabt-table th,
+.gabt-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.gabt-table th {
+    background: #f6f7f7;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.gabt-table tr:hover {
+    background: #f6f7f7;
+}
+
+.gabt-table .actions {
+    white-space: nowrap;
+}
+
+.gabt-table .actions a {
+    margin-right: 10px;
+    text-decoration: none;
+}
+
+/* Status badges */
+.gabt-status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.gabt-status-badge.pending {
+    background: #fef7e0;
+    color: #8a6914;
+}
+
+.gabt-status-badge.confirmed {
+    background: #e7f5ff;
+    color: #0c5460;
+}
+
+.gabt-status-badge.completed {
+    background: #d1e7dd;
+    color: #0a3622;
+}
+
+.gabt-status-badge.cancelled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Pulsanti */
+.gabt-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gabt-btn-primary {
+    background: #0073aa;
+    color: #fff;
+}
+
+.gabt-btn-primary:hover {
+    background: #005a87;
+    color: #fff;
+}
+
+.gabt-btn-secondary {
+    background: #f6f7f7;
+    color: #23282d;
+    border: 1px solid #ccd0d4;
+}
+
+.gabt-btn-secondary:hover {
+    background: #f0f0f1;
+    color: #23282d;
+}
+
+.gabt-btn-danger {
+    background: #d63638;
+    color: #fff;
+}
+
+.gabt-btn-danger:hover {
+    background: #b32d2e;
+    color: #fff;
+}
+
+.gabt-btn-small {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.gabt-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Test connessione */
+.gabt-test-result {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 4px;
+    display: none;
+}
+
+.gabt-test-result.success {
+    background: #d1e7dd;
+    border: 1px solid #badbcc;
+    color: #0a3622;
+}
+
+.gabt-test-result.error {
+    background: #f8d7da;
+    border: 1px solid #f1aeb5;
+    color: #721c24;
+}
+
+/* Filtri */
+.gabt-filters {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.gabt-filters .filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: end;
+}
+
+.gabt-filters .filter-field {
+    flex: 1;
+}
+
+/* Paginazione */
+.gabt-pagination {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.gabt-pagination a,
+.gabt-pagination span {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0 2px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #0073aa;
+}
+
+.gabt-pagination .current {
+    background: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+}
+
+.gabt-pagination a:hover {
+    background: #f6f7f7;
+}
+
+/* Sezioni impostazioni */
+.gabt-settings-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.gabt-settings-section h3 {
+    margin: 0;
+    padding: 15px 20px;
+    background: #f6f7f7;
+    border-bottom: 1px solid #ccd0d4;
+    font-size: 16px;
+    color: #23282d;
+}
+
+.gabt-settings-section .section-content {
+    padding: 20px;
+}
+
+/* Notice personalizzate */
+.gabt-notice {
+    padding: 12px;
+    margin: 20px 0;
+    border-left: 4px solid;
+    border-radius: 0 4px 4px 0;
+}
+
+.gabt-notice.success {
+    background: #d1e7dd;
+    border-color: #0a3622;
+    color: #0a3622;
+}
+
+.gabt-notice.error {
+    background: #f8d7da;
+    border-color: #721c24;
+    color: #721c24;
+}
+
+.gabt-notice.warning {
+    background: #fef7e0;
+    border-color: #8a6914;
+    color: #8a6914;
+}
+
+.gabt-notice.info {
+    background: #e7f5ff;
+    border-color: #0c5460;
+    color: #0c5460;
+}
+
+/* Loading spinner */
+.gabt-loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: gabt-spin 1s linear infinite;
+}
+
+@keyframes gabt-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .gabt-dashboard-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .gabt-form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .gabt-filters .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .gabt-table {
+        overflow-x: auto;
+    }
+}

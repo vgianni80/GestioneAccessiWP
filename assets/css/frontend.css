@@ -1,0 +1,475 @@
+/**
+ * Stili frontend per il plugin Gestione Accessi BluTrasimeno
+ * 
+ * @package GestioneAccessiBT
+ * @since 1.3.0
+ */
+
+/* Container principale */
+.gabt-frontend-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Header */
+.gabt-page-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #0073aa;
+}
+
+.gabt-page-header h1 {
+    color: #23282d;
+    font-size: 28px;
+    margin: 0 0 10px 0;
+}
+
+.gabt-page-header .subtitle {
+    color: #666;
+    font-size: 16px;
+}
+
+/* Informazioni prenotazione */
+.gabt-booking-info {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.gabt-booking-info h3 {
+    color: #0073aa;
+    margin: 0 0 15px 0;
+    font-size: 20px;
+}
+
+.gabt-booking-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.gabt-booking-details p {
+    margin: 0;
+    padding: 8px 0;
+}
+
+.gabt-booking-details strong {
+    color: #23282d;
+}
+
+/* Form ospiti */
+.gabt-guest-form-container {
+    background: #fff;
+}
+
+.gabt-guest-form {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.gabt-guest-form h4 {
+    color: #0073aa;
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.gabt-guest-form.completed {
+    background: #f8f9fa;
+    border-color: #28a745;
+}
+
+.gabt-guest-form.completed h4 {
+    color: #28a745;
+}
+
+/* Campi form */
+.gabt-form-field {
+    margin-bottom: 20px;
+}
+
+.gabt-form-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #23282d;
+    font-size: 14px;
+}
+
+.gabt-form-field .required {
+    color: #dc3545;
+}
+
+.gabt-form-field input,
+.gabt-form-field select,
+.gabt-form-field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    box-sizing: border-box;
+}
+
+.gabt-form-field input:focus,
+.gabt-form-field select:focus,
+.gabt-form-field textarea:focus {
+    border-color: #0073aa;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 115, 170, 0.25);
+}
+
+.gabt-form-field input.error,
+.gabt-form-field select.error {
+    border-color: #dc3545;
+}
+
+.gabt-form-field .field-error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Layout form a due colonne */
+.gabt-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.gabt-form-row.single {
+    grid-template-columns: 1fr;
+}
+
+/* Pulsanti */
+.gabt-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.gabt-btn-primary {
+    background: #0073aa;
+    color: #fff;
+}
+
+.gabt-btn-primary:hover:not(:disabled) {
+    background: #005a87;
+    color: #fff;
+}
+
+.gabt-btn-success {
+    background: #28a745;
+    color: #fff;
+}
+
+.gabt-btn-success:hover:not(:disabled) {
+    background: #218838;
+    color: #fff;
+}
+
+.gabt-btn-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.gabt-btn-secondary:hover:not(:disabled) {
+    background: #5a6268;
+    color: #fff;
+}
+
+.gabt-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.gabt-btn .loading {
+    display: none;
+}
+
+.gabt-btn.loading .loading {
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* Azioni form */
+.gabt-form-actions {
+    text-align: right;
+    padding-top: 15px;
+    border-top: 1px solid #dee2e6;
+}
+
+.gabt-form-footer {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 25px;
+    margin-top: 30px;
+    text-align: center;
+}
+
+/* Barra di progresso */
+.gabt-progress {
+    margin-top: 20px;
+}
+
+.gabt-progress p {
+    margin: 0 0 10px 0;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.gabt-progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.gabt-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0073aa, #005a87);
+    transition: width 0.3s ease;
+}
+
+/* Messaggi */
+.gabt-message {
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.gabt-message.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.gabt-message.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.gabt-message.warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.gabt-message.info {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+/* Pagina di conferma */
+.gabt-confirmation-page {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.gabt-confirmation-page .success-icon {
+    font-size: 64px;
+    color: #28a745;
+    margin-bottom: 20px;
+}
+
+.gabt-confirmation-page h2 {
+    color: #28a745;
+    margin-bottom: 15px;
+}
+
+.gabt-confirmation-page p {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+/* Stato prenotazione */
+.gabt-booking-status {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.gabt-status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.gabt-status-item:last-child {
+    border-bottom: none;
+}
+
+.gabt-status-item .label {
+    font-weight: 600;
+    color: #23282d;
+}
+
+.gabt-status-item .value {
+    color: #666;
+}
+
+/* Badge status */
+.gabt-status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.gabt-status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.gabt-status-badge.confirmed {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.gabt-status-badge.completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.gabt-status-badge.cancelled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Loading spinner */
+.gabt-loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: gabt-spin 1s linear infinite;
+}
+
+@keyframes gabt-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Overlay loading */
+.gabt-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.gabt-overlay .loading-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.gabt-overlay .gabt-loading {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+    margin-bottom: 15px;
+}
+
+/* Ricerca prenotazione */
+.gabt-booking-search {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.gabt-booking-search h3 {
+    color: #0073aa;
+    margin-bottom: 20px;
+}
+
+.gabt-booking-search .gabt-form-field {
+    max-width: 300px;
+    margin: 0 auto 20px auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .gabt-frontend-container {
+        padding: 15px;
+    }
+    
+    .gabt-form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .gabt-booking-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .gabt-guest-form {
+        padding: 20px;
+    }
+    
+    .gabt-page-header h1 {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .gabt-frontend-container {
+        padding: 10px;
+    }
+    
+    .gabt-guest-form {
+        padding: 15px;
+    }
+    
+    .gabt-form-field input,
+    .gabt-form-field select {
+        padding: 8px 10px;
+    }
+    
+    .gabt-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}
