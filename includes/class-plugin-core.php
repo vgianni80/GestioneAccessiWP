@@ -10,6 +10,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+require_once 'admin/class-admin-pages.php';
+
 class GABT_Plugin_Core {
     
     /**
