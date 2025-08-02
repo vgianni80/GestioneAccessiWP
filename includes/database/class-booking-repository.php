@@ -12,21 +12,7 @@ if (!defined('ABSPATH')) {
 
 class GABT_Booking_Repository {
     
-    private $db_manager;
     private $table_names;
-    
-    /**
-     * Campi ammessi per ordinamento
-     */
-    const ALLOWED_ORDER_FIELDS = array(
-        'id', 'booking_code', 'checkin_date', 'checkout_date', 
-        'nights', 'total_guests', 'status', 'created_at', 'updated_at'
-    );
-    
-    /**
-     * Direzioni di ordinamento ammesse
-     */
-    const ALLOWED_ORDER_DIRECTIONS = array('ASC', 'DESC');
     
     /**
      * Stati prenotazione validi
@@ -36,8 +22,12 @@ class GABT_Booking_Repository {
     );
     
     public function __construct() {
-        $this->db_manager = new GABT_Database_Manager();
-        $this->table_names = $this->db_manager->get_table_names();
+        global $wpdb;
+        $this->table_names = array(
+            'bookings' => $wpdb->prefix . 'gabt_bookings',
+            'guests' => $wpdb->prefix . 'gabt_guests',
+            'logs' => $wpdb->prefix . 'gabt_logs'
+        );
     }
     
     /**
@@ -112,23 +102,14 @@ class GABT_Booking_Repository {
             return null;
         }
         
-        // Cache key
-        $cache_key = 'gabt_booking_' . $booking_id;
-        $booking = wp_cache_get($cache_key);
+        $booking = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$this->table_names['bookings']} WHERE id = %d",
+            $booking_id
+        ));
         
-        if (false === $booking) {
-            $booking = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$this->table_names['bookings']} WHERE id = %d",
-                $booking_id
-            ));
-            
-            if ($booking) {
-                // Carica anche gli ospiti
-                $booking->guests = $this->get_booking_guests($booking_id);
-                
-                // Cache per 5 minuti
-                wp_cache_set($cache_key, $booking, '', 300);
-            }
+        if ($booking) {
+            // Carica anche gli ospiti
+            $booking->guests = $this->get_booking_guests($booking_id);
         }
         
         return $booking;
@@ -146,20 +127,13 @@ class GABT_Booking_Repository {
             return null;
         }
         
-        // Cache key
-        $cache_key = 'gabt_booking_code_' . $booking_code;
-        $booking = wp_cache_get($cache_key);
+        $booking = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$this->table_names['bookings']} WHERE booking_code = %s",
+            $booking_code
+        ));
         
-        if (false === $booking) {
-            $booking = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$this->table_names['bookings']} WHERE booking_code = %s",
-                $booking_code
-            ));
-            
-            if ($booking) {
-                $booking->guests = $this->get_booking_guests($booking->id);
-                wp_cache_set($cache_key, $booking, '', 300);
-            }
+        if ($booking) {
+            $booking->guests = $this->get_booking_guests($booking->id);
         }
         
         return $booking;
@@ -171,15 +145,13 @@ class GABT_Booking_Repository {
     public function get_bookings($filters = array()) {
         global $wpdb;
         
-        $where_clauses = array('1=1'); // Inizia con condizione sempre vera
+        $where_clauses = array('1=1');
         $where_values = array();
         
         // Filtro status
-        if (!empty($filters['status'])) {
-            if (in_array($filters['status'], self::VALID_STATUSES)) {
-                $where_clauses[] = "status = %s";
-                $where_values[] = $filters['status'];
-            }
+        if (!empty($filters['status']) && in_array($filters['status'], self::VALID_STATUSES)) {
+            $where_clauses[] = "status = %s";
+            $where_values[] = $filters['status'];
         }
         
         // Filtro date
@@ -193,25 +165,11 @@ class GABT_Booking_Repository {
             $where_values[] = sanitize_text_field($filters['date_to']);
         }
         
-        // Filtro schedine
-        if (isset($filters['schedine_sent'])) {
-            $where_clauses[] = "schedine_sent = %d";
-            $where_values[] = absint($filters['schedine_sent']);
-        }
-        
         // Costruisci WHERE
         $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
         
-        // Ordinamento sicuro
-        $order_by = 'created_at';
-        if (!empty($filters['order_by']) && in_array($filters['order_by'], self::ALLOWED_ORDER_FIELDS)) {
-            $order_by = $filters['order_by'];
-        }
-        
-        $order = 'DESC';
-        if (!empty($filters['order']) && in_array(strtoupper($filters['order']), self::ALLOWED_ORDER_DIRECTIONS)) {
-            $order = strtoupper($filters['order']);
-        }
+        // Ordinamento
+        $order_by = 'created_at DESC';
         
         // Paginazione
         $limit_sql = '';
@@ -222,7 +180,7 @@ class GABT_Booking_Repository {
         }
         
         // Costruisci query completa
-        $sql = "SELECT * FROM {$this->table_names['bookings']} {$where_sql} ORDER BY {$order_by} {$order} {$limit_sql}";
+        $sql = "SELECT * FROM {$this->table_names['bookings']} {$where_sql} ORDER BY {$order_by} {$limit_sql}";
         
         // Esegui query
         if (!empty($where_values)) {
@@ -232,7 +190,7 @@ class GABT_Booking_Repository {
             $bookings = $wpdb->get_results($sql);
         }
         
-        return $bookings;
+        return $bookings ?: array();
     }
     
     /**
@@ -260,64 +218,11 @@ class GABT_Booking_Repository {
         );
         
         if ($result !== false) {
-            // Invalida cache
-            wp_cache_delete('gabt_booking_' . $booking_id);
-            
             // Log aggiornamento
             $this->log_booking_action($booking_id, 'updated', $booking_data);
         }
         
         return $result !== false;
-    }
-    
-    /**
-     * Elimina una prenotazione
-     */
-    public function delete_booking($booking_id) {
-        global $wpdb;
-        
-        $booking_id = absint($booking_id);
-        
-        if (!$booking_id) {
-            return false;
-        }
-        
-        // Inizia transazione
-        $wpdb->query('START TRANSACTION');
-        
-        try {
-            // Ottieni dati prima di eliminare per log
-            $booking = $this->get_booking($booking_id);
-            
-            // Elimina la prenotazione (CASCADE eliminerà anche gli ospiti)
-            $result = $wpdb->delete(
-                $this->table_names['bookings'],
-                array('id' => $booking_id),
-                array('%d')
-            );
-            
-            if ($result === false) {
-                throw new Exception('Errore eliminazione prenotazione');
-            }
-            
-            $wpdb->query('COMMIT');
-            
-            // Invalida cache
-            wp_cache_delete('gabt_booking_' . $booking_id);
-            if ($booking) {
-                wp_cache_delete('gabt_booking_code_' . $booking->booking_code);
-            }
-            
-            // Log eliminazione
-            $this->log_booking_action($booking_id, 'deleted');
-            
-            return true;
-            
-        } catch (Exception $e) {
-            $wpdb->query('ROLLBACK');
-            $this->log_error('Errore eliminazione prenotazione: ' . $e->getMessage());
-            return false;
-        }
     }
     
     /**
@@ -338,12 +243,6 @@ class GABT_Booking_Repository {
             return new WP_Error('booking_not_found', 'Prenotazione non trovata');
         }
         
-        // Verifica limite ospiti
-        $current_guests = count($booking->guests);
-        if ($current_guests >= $booking->total_guests) {
-            return new WP_Error('guest_limit', 'Numero massimo di ospiti raggiunto');
-        }
-        
         // Sanitizza dati ospite
         $guest_data = $this->sanitize_guest_data($guest_data);
         $guest_data['booking_id'] = $booking_id;
@@ -359,10 +258,6 @@ class GABT_Booking_Repository {
         if ($result === false) {
             return new WP_Error('db_error', 'Errore nell\'aggiunta dell\'ospite: ' . $wpdb->last_error);
         }
-        
-        // Invalida cache
-        wp_cache_delete('gabt_booking_' . $booking_id);
-        wp_cache_delete('gabt_booking_code_' . $booking->booking_code);
         
         return $wpdb->insert_id;
     }
@@ -384,77 +279,7 @@ class GABT_Booking_Repository {
              WHERE booking_id = %d 
              ORDER BY guest_type DESC, id ASC",
             $booking_id
-        ));
-    }
-    
-    /**
-     * Aggiorna un ospite
-     */
-    public function update_guest($guest_id, $guest_data) {
-        global $wpdb;
-        
-        $guest_id = absint($guest_id);
-        
-        if (!$guest_id) {
-            return false;
-        }
-        
-        // Sanitizza dati
-        $guest_data = $this->sanitize_guest_data($guest_data);
-        $guest_data['updated_at'] = current_time('mysql');
-        
-        // Ottieni booking_id per invalidare cache
-        $guest = $wpdb->get_row($wpdb->prepare(
-            "SELECT booking_id FROM {$this->table_names['guests']} WHERE id = %d",
-            $guest_id
-        ));
-        
-        $result = $wpdb->update(
-            $this->table_names['guests'],
-            $guest_data,
-            array('id' => $guest_id),
-            $this->get_guest_format($guest_data),
-            array('%d')
-        );
-        
-        if ($result !== false && $guest) {
-            // Invalida cache booking
-            wp_cache_delete('gabt_booking_' . $guest->booking_id);
-        }
-        
-        return $result !== false;
-    }
-    
-    /**
-     * Elimina un ospite
-     */
-    public function delete_guest($guest_id) {
-        global $wpdb;
-        
-        $guest_id = absint($guest_id);
-        
-        if (!$guest_id) {
-            return false;
-        }
-        
-        // Ottieni booking_id per invalidare cache
-        $guest = $wpdb->get_row($wpdb->prepare(
-            "SELECT booking_id FROM {$this->table_names['guests']} WHERE id = %d",
-            $guest_id
-        ));
-        
-        $result = $wpdb->delete(
-            $this->table_names['guests'],
-            array('id' => $guest_id),
-            array('%d')
-        );
-        
-        if ($result !== false && $guest) {
-            // Invalida cache booking
-            wp_cache_delete('gabt_booking_' . $guest->booking_id);
-        }
-        
-        return $result !== false;
+        )) ?: array();
     }
     
     /**
@@ -503,7 +328,7 @@ class GABT_Booking_Repository {
                 HAVING guest_count > 0
                 ORDER BY b.checkin_date ASC";
         
-        return $wpdb->get_results($sql);
+        return $wpdb->get_results($sql) ?: array();
     }
     
     /**
@@ -511,7 +336,8 @@ class GABT_Booking_Repository {
      */
     private function generate_booking_code() {
         do {
-            $code = 'BT' . date('Y') . strtoupper(wp_generate_password(6, false, false));
+            $code = 'BT' . date('Y') . wp_generate_password(6, false, false);
+            $code = strtoupper($code);
         } while ($this->booking_code_exists($code));
         
         return $code;
@@ -537,16 +363,26 @@ class GABT_Booking_Repository {
     public function get_booking_stats() {
         global $wpdb;
         
-        $cache_key = 'gabt_booking_stats';
-        $stats = wp_cache_get($cache_key);
+        $stats = array();
         
-        if (false === $stats) {
-            $stats = array();
-            
+        try {
             // Prenotazioni totali
             $stats['total'] = $wpdb->get_var(
                 "SELECT COUNT(*) FROM {$this->table_names['bookings']}"
-            );
+            ) ?: 0;
+            
+            // Schedine inviate
+            $stats['schedine_sent'] = $wpdb->get_var(
+                "SELECT COUNT(*) FROM {$this->table_names['bookings']} 
+                 WHERE schedine_sent = 1"
+            ) ?: 0;
+            
+            // Prenotazioni questo mese
+            $stats['this_month'] = $wpdb->get_var(
+                "SELECT COUNT(*) FROM {$this->table_names['bookings']} 
+                 WHERE MONTH(created_at) = MONTH(CURDATE()) 
+                 AND YEAR(created_at) = YEAR(CURDATE())"
+            ) ?: 0;
             
             // Prenotazioni per stato
             $status_counts = $wpdb->get_results(
@@ -556,25 +392,22 @@ class GABT_Booking_Repository {
             );
             
             $stats['by_status'] = array();
-            foreach ($status_counts as $status) {
-                $stats['by_status'][$status->status] = $status->count;
+            if ($status_counts) {
+                foreach ($status_counts as $status) {
+                    $stats['by_status'][$status->status] = $status->count;
+                }
             }
             
-            // Schedine inviate
-            $stats['schedine_sent'] = $wpdb->get_var(
-                "SELECT COUNT(*) FROM {$this->table_names['bookings']} 
-                 WHERE schedine_sent = 1"
-            );
+        } catch (Exception $e) {
+            $this->log_error('Errore calcolo statistiche: ' . $e->getMessage());
             
-            // Prenotazioni questo mese
-            $stats['this_month'] = $wpdb->get_var(
-                "SELECT COUNT(*) FROM {$this->table_names['bookings']} 
-                 WHERE MONTH(created_at) = MONTH(CURDATE()) 
-                 AND YEAR(created_at) = YEAR(CURDATE())"
+            // Ritorna statistiche di default
+            $stats = array(
+                'total' => 0,
+                'schedine_sent' => 0,
+                'this_month' => 0,
+                'by_status' => array()
             );
-            
-            // Cache per 1 ora
-            wp_cache_set($cache_key, $stats, '', 3600);
         }
         
         return $stats;
@@ -768,18 +601,22 @@ class GABT_Booking_Repository {
     private function log_booking_action($booking_id, $action, $data = array()) {
         global $wpdb;
         
-        $wpdb->insert(
-            $this->table_names['logs'],
-            array(
-                'log_type' => 'booking_' . $action,
-                'message' => "Booking {$booking_id} {$action}",
-                'context' => json_encode($data),
-                'level' => 'info',
-                'user_id' => get_current_user_id(),
-                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null
-            ),
-            array('%s', '%s', '%s', '%s', '%d', '%s')
-        );
+        try {
+            $wpdb->insert(
+                $this->table_names['logs'],
+                array(
+                    'log_type' => 'booking_' . $action,
+                    'message' => "Booking {$booking_id} {$action}",
+                    'context' => json_encode($data),
+                    'level' => 'info',
+                    'user_id' => get_current_user_id(),
+                    'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null
+                ),
+                array('%s', '%s', '%s', '%s', '%d', '%s')
+            );
+        } catch (Exception $e) {
+            error_log('GABT: Errore logging: ' . $e->getMessage());
+        }
     }
     
     /**
@@ -788,17 +625,22 @@ class GABT_Booking_Repository {
     private function log_error($message) {
         global $wpdb;
         
-        $wpdb->insert(
-            $this->table_names['logs'],
-            array(
-                'log_type' => 'booking_error',
-                'message' => $message,
-                'level' => 'error',
-                'user_id' => get_current_user_id(),
-                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null
-            ),
-            array('%s', '%s', '%s', '%d', '%s')
-        );
+        try {
+            $wpdb->insert(
+                $this->table_names['logs'],
+                array(
+                    'log_type' => 'booking_error',
+                    'message' => $message,
+                    'level' => 'error',
+                    'user_id' => get_current_user_id(),
+                    'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null
+                ),
+                array('%s', '%s', '%s', '%d', '%s')
+            );
+        } catch (Exception $e) {
+            // Fallback al log di WordPress
+            error_log('[GABT Booking Repository] ' . $message);
+        }
         
         if (WP_DEBUG) {
             error_log('[GABT Booking Repository] ' . $message);
