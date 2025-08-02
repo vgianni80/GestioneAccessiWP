@@ -6,7 +6,7 @@
  * @since 1.3.0
  */
 
-// Configurazione globale
+// Configurazione globale - Fix per le variabili globali
 const GABT_Admin = {
     ajaxUrl: window.gabt_admin_vars?.ajax_url || '/wp-admin/admin-ajax.php',
     nonce: window.gabt_admin_vars?.nonce || '',
@@ -195,7 +195,7 @@ function setupBookingsTable(table) {
  */
 async function handleTableAction(e) {
     e.preventDefault();
-    const btn = e.target;
+    const btn = e.currentTarget;
     const action = btn.dataset.action;
     const bookingId = btn.dataset.bookingId;
     
@@ -319,7 +319,7 @@ function initTestConnections() {
  */
 async function handleConnectionTest(e) {
     e.preventDefault();
-    const btn = e.target;
+    const btn = e.currentTarget;
     const testType = btn.dataset.test;
     
     if (!testType) return;
@@ -442,7 +442,7 @@ function initDataExport() {
  */
 async function handleDataExport(e) {
     e.preventDefault();
-    const btn = e.target;
+    const btn = e.currentTarget;
     const exportType = btn.dataset.export;
     
     if (!exportType) return;
@@ -463,13 +463,15 @@ async function handleDataExport(e) {
             credentials: 'same-origin'
         });
         
-        if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
             // Download file
-            const blob = await response.blob();
+            const blob = new Blob([atob(data.data.data)], { type: data.data.mime_type });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `export_${exportType}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = data.data.filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -559,7 +561,7 @@ function initUIComponents() {
  */
 async function handleQuickAction(e) {
     e.preventDefault();
-    const action = e.target.dataset.action;
+    const action = e.currentTarget.dataset.action;
     
     if (!action) return;
     
@@ -605,12 +607,12 @@ function showMessage(message, type = 'info') {
     const messageDiv = document.createElement('div');
     messageDiv.className = `gabt-admin-message gabt-admin-message-${type}`;
     messageDiv.innerHTML = `
-        <p>${message}</p>
+        <p>${escapeHtml(message)}</p>
         <button type="button" class="gabt-message-close">&times;</button>
     `;
     
     // Aggiungi al DOM
-    const container = document.querySelector('.gabt-admin-container') || document.body;
+    const container = document.querySelector('.gabt-admin-container') || document.querySelector('.wrap') || document.body;
     container.insertBefore(messageDiv, container.firstChild);
     
     // Auto-rimozione dopo 5 secondi
@@ -630,6 +632,113 @@ function showMessage(message, type = 'info') {
 }
 
 /**
+ * Mostra risultati test
+ */
+function showTestResults(results) {
+    const resultsContainer = document.querySelector('.gabt-test-results');
+    if (!resultsContainer) return;
+    
+    resultsContainer.innerHTML = `
+        <h3>Risultati Test</h3>
+        <pre>${JSON.stringify(results, null, 2)}</pre>
+    `;
+    resultsContainer.style.display = 'block';
+}
+
+/**
+ * Aggiorna statistiche dashboard
+ */
+function updateDashboardStats(stats) {
+    Object.keys(stats).forEach(key => {
+        const statElement = document.querySelector(`[data-stat="${key}"]`);
+        if (statElement) {
+            statElement.textContent = stats[key];
+        }
+    });
+}
+
+/**
+ * Gestisce ordinamento colonne
+ */
+function handleColumnSort(e) {
+    const header = e.currentTarget;
+    const column = header.dataset.column;
+    const currentOrder = header.dataset.order || 'asc';
+    const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+    
+    // Aggiorna URL con parametri di ordinamento
+    const url = new URL(window.location);
+    url.searchParams.set('orderby', column);
+    url.searchParams.set('order', newOrder);
+    window.location.href = url.toString();
+}
+
+/**
+ * Gestisce filtri tabella
+ */
+function handleTableFilter(e) {
+    const input = e.target;
+    const filterType = input.dataset.filter;
+    const value = input.value;
+    
+    // Aggiorna URL con parametri filtro
+    const url = new URL(window.location);
+    if (value) {
+        url.searchParams.set(filterType, value);
+    } else {
+        url.searchParams.delete(filterType);
+    }
+    
+    // Reset paginazione quando si filtra
+    url.searchParams.delete('paged');
+    
+    window.location.href = url.toString();
+}
+
+/**
+ * Valida credenziali in tempo reale
+ */
+async function validateCredentials() {
+    const form = document.getElementById('gabt-settings-form');
+    if (!form) return;
+    
+    const username = form.querySelector('input[name="alloggiati_username"]').value;
+    const password = form.querySelector('input[name="alloggiati_password"]').value;
+    const wsKey = form.querySelector('input[name="alloggiati_ws_key"]').value;
+    
+    if (!username || !password || !wsKey) {
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('action', 'gabt_test_connection');
+        formData.append('test_type', 'authentication');
+        formData.append('nonce', GABT_Admin.nonce);
+        
+        const response = await fetch(GABT_Admin.ajaxUrl, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        
+        const statusElement = document.querySelector('.gabt-credentials-status');
+        if (statusElement) {
+            if (data.success) {
+                statusElement.innerHTML = '<span style="color: green;">✓ Credenziali valide</span>';
+            } else {
+                statusElement.innerHTML = '<span style="color: red;">✗ Credenziali non valide</span>';
+            }
+        }
+        
+    } catch (error) {
+        console.error('Errore validazione credenziali:', error);
+    }
+}
+
+/**
  * Utility: Debounce function
  */
 function debounce(func, wait) {
@@ -644,38 +753,174 @@ function debounce(func, wait) {
     };
 }
 
+/**
+ * Utility: Escape HTML
+ */
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
 // Funzioni helper aggiuntive
 function showTooltip(e) {
-    // Implementazione tooltip
+    const element = e.currentTarget;
+    const text = element.dataset.tooltip;
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'gabt-tooltip';
+    tooltip.textContent = text;
+    
+    document.body.appendChild(tooltip);
+    
+    const rect = element.getBoundingClientRect();
+    tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+    tooltip.style.left = (rect.left + (rect.width - tooltip.offsetWidth) / 2) + 'px';
+    
+    element._tooltip = tooltip;
 }
 
 function hideTooltip(e) {
-    // Nasconde tooltip
+    const element = e.currentTarget;
+    if (element._tooltip) {
+        element._tooltip.remove();
+        delete element._tooltip;
+    }
 }
 
 function toggleAccordion(e) {
-    // Toggle accordion
-    const content = e.target.nextElementSibling;
-    if (content) {
-        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+    const header = e.currentTarget;
+    const content = header.nextElementSibling;
+    const isOpen = content.style.display === 'block';
+    
+    // Chiudi tutti gli accordion dello stesso gruppo
+    const group = header.closest('.gabt-accordion-group');
+    if (group) {
+        group.querySelectorAll('.gabt-accordion-content').forEach(item => {
+            item.style.display = 'none';
+        });
+        group.querySelectorAll('.gabt-accordion-header').forEach(item => {
+            item.classList.remove('active');
+        });
+    }
+    
+    // Toggle questo accordion
+    if (!isOpen) {
+        content.style.display = 'block';
+        header.classList.add('active');
     }
 }
 
 function switchTab(e) {
-    // Switch tab
-    const tabId = e.target.dataset.tab;
-    if (tabId) {
-        document.querySelectorAll('.gabt-tab-content').forEach(tab => {
-            tab.style.display = 'none';
-        });
-        document.querySelectorAll('.gabt-tab-button').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        const targetTab = document.getElementById(tabId);
-        if (targetTab) {
-            targetTab.style.display = 'block';
-            e.target.classList.add('active');
+    const button = e.currentTarget;
+    const tabId = button.dataset.tab;
+    
+    if (!tabId) return;
+    
+    // Rimuovi active da tutti i tab
+    document.querySelectorAll('.gabt-tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelectorAll('.gabt-tab-content').forEach(tab => {
+        tab.style.display = 'none';
+    });
+    
+    // Attiva tab selezionato
+    button.classList.add('active');
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) {
+        targetTab.style.display = 'block';
+    }
+    
+    // Salva tab attivo in localStorage
+    localStorage.setItem('gabt_active_tab', tabId);
+}
+
+// Ripristina tab attivo al caricamento
+window.addEventListener('load', () => {
+    const activeTab = localStorage.getItem('gabt_active_tab');
+    if (activeTab) {
+        const button = document.querySelector(`[data-tab="${activeTab}"]`);
+        if (button) {
+            button.click();
         }
     }
+});
+
+// Aggiungi stili per i messaggi
+const style = document.createElement('style');
+style.textContent = `
+.gabt-admin-message {
+    position: fixed;
+    top: 32px;
+    right: 20px;
+    max-width: 400px;
+    padding: 15px 40px 15px 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 9999;
+    transition: opacity 0.3s ease;
 }
+
+.gabt-admin-message-success {
+    background: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.gabt-admin-message-error {
+    background: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.gabt-admin-message-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.gabt-message-close {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.5;
+}
+
+.gabt-message-close:hover {
+    opacity: 1;
+}
+
+.gabt-tooltip {
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.gabt-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+`;
+document.head.appendChild(style);
