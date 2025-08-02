@@ -58,34 +58,27 @@ class GABT_Plugin_Core {
     /**
      * Carica i componenti del plugin
      */
+// Modifica il metodo load_components():
     private function load_components() {
         try {
-            // Carica sempre il database manager
-            if (class_exists('GABT_Database_Manager')) {
-                $this->database_manager = new GABT_Database_Manager();
-            }
+            // Carica sempre il database manager PER PRIMO
+            $this->database_manager = new GABT_Database_Manager();
             
             // Carica componenti admin solo nell'area admin
             if (is_admin()) {
-                if (class_exists('GABT_Admin_Pages')) {
-                    $this->admin_pages = new GABT_Admin_Pages();
-                }
-                if (class_exists('GABT_Ajax_Handlers')) {
-                    $this->ajax_handlers = new GABT_Ajax_Handlers();
-                }
+                $this->admin_pages = new GABT_Admin_Pages();
+                $this->ajax_handlers = new GABT_Ajax_Handlers();
             }
             
-            // Carica componenti frontend sempre (per AJAX)
-            if (class_exists('GABT_Frontend_Handler')) {
-                $this->frontend_handler = new GABT_Frontend_Handler();
-            }
+            // Carica componenti frontend
+            $this->frontend_handler = new GABT_Frontend_Handler();
             
-            // Carica sempre il cron manager
-            if (class_exists('GABT_Cron_Manager')) {
-                $this->cron_manager = new GABT_Cron_Manager();
-            }
+            // Carica cron manager
+            $this->cron_manager = new GABT_Cron_Manager();
+            
         } catch (Exception $e) {
             error_log('GABT Plugin Core - Errore caricamento componenti: ' . $e->getMessage());
+            // Non interrompere l'esecuzione
         }
     }
     

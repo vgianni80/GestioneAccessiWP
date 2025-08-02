@@ -152,14 +152,10 @@ register_deactivation_hook(__FILE__, 'gabt_deactivate_plugin');
 
 // Autoloader semplice per le classi del plugin
 // Non caricare classi durante l'attivazione per evitare output inatteso
+// Semplifica l'autoloader:
 spl_autoload_register(function ($class_name) {
-    // Non caricare nulla durante l'attivazione
-    if (defined('WP_ADMIN') && isset($_GET['action']) && $_GET['action'] === 'activate') {
-        return;
-    }
-    
     // Controlla se la classe appartiene al nostro plugin
-    if (!is_string($class_name) || strpos($class_name, 'GABT_') !== 0) {
+    if (strpos($class_name, 'GABT_') !== 0) {
         return;
     }
     
@@ -168,7 +164,7 @@ spl_autoload_register(function ($class_name) {
     $class_file = str_replace('_', '-', strtolower($class_file));
     $class_file = 'class-' . $class_file . '.php';
     
-    // Definisci le directory dove cercare le classi
+    // Directory di ricerca
     $directories = [
         GABT_PLUGIN_PATH . 'includes/',
         GABT_PLUGIN_PATH . 'includes/admin/',
@@ -179,7 +175,6 @@ spl_autoload_register(function ($class_name) {
         GABT_PLUGIN_PATH . 'includes/cron/',
     ];
     
-    // Cerca il file nelle directory
     foreach ($directories as $directory) {
         $file_path = $directory . $class_file;
         if (file_exists($file_path)) {

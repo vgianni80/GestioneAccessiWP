@@ -19,6 +19,25 @@ class GABT_Admin_Pages {
         $this->booking_repository = new GABT_Booking_Repository();
         $this->settings_manager = new GABT_Settings_Manager();
     }
+
+    // Aggiungi dopo il costruttore:
+    /**
+     * Inizializzazione
+     */
+    public function init() {
+        // Hook necessari per le pagine admin
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+    }
+
+    /**
+     * Carica assets admin
+     */
+    public function enqueue_admin_assets($hook) {
+        if (strpos($hook, 'gestione-accessi-bt') === false) {
+            return;
+        }
+        // Carica CSS/JS specifici
+    }
     
     /**
      * Pagina principale - Dashboard
