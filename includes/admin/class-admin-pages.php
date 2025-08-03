@@ -139,11 +139,25 @@ class GABT_Admin_Pages {
             $settings = $this->get_default_settings();
         }
         
-        $this->render_template('settings', array(
-            'settings' => $settings,
-            'message' => $message,
-            'message_type' => $message_type
-        ));
+        // Prova prima il template moderno
+        $modern_template = GABT_PLUGIN_PATH . "templates/admin/settings-modern.php";
+        
+        if (file_exists($modern_template)) {
+            // Carica template moderno
+            extract(array(
+                'settings' => $settings,
+                'message' => $message,
+                'message_type' => $message_type
+            ));
+            include $modern_template;
+        } else {
+            // Fallback al template integrato moderno
+            $this->render_modern_settings(array(
+                'settings' => $settings,
+                'message' => $message,
+                'message_type' => $message_type
+            ));
+        }
     }
     
     /**
@@ -220,6 +234,426 @@ class GABT_Admin_Pages {
         }
     }
     
+    public function render_modern_settings($vars) {
+        $settings = $vars['settings'] ?? array();
+        ?>
+        <div class="gabt-admin-container">
+            <div class="gabt-flex gabt-items-center gabt-justify-between gabt-mb-8">
+                <div>
+                    <h1 class="gabt-text-lg gabt-font-bold" style="margin: 0;">
+                        ⚙️ Impostazioni Gestione Accessi
+                    </h1>
+                    <p style="margin: 0.5rem 0 0 0; color: var(--gabt-gray-600);">
+                        Configura la connessione al servizio Alloggiati Web e i dati della struttura
+                    </p>
+                </div>
+                <div class="gabt-flex gabt-gap-4">
+                    <button type="button" id="gabt-test-modern" class="gabt-btn gabt-btn--secondary gabt-btn--sm">
+                        🧪 Test API Moderne
+                    </button>
+                    <button type="button" id="gabt-test-connection" class="gabt-btn gabt-btn--primary gabt-btn--sm">
+                        🔗 Test Connessione
+                    </button>
+                </div>
+            </div>
+
+            <?php if (!empty($vars['message'])): ?>
+                <div class="gabt-notification gabt-notification--<?= $vars['message_type'] === 'error' ? 'error' : 'success' ?> gabt-mb-6" style="position: relative; top: auto; right: auto;">
+                    <div class="gabt-notification__content">
+                        <div class="gabt-notification__icon">
+                            <?= $vars['message_type'] === 'error' ? '❌' : '✅' ?>
+                        </div>
+                        <div class="gabt-notification__message">
+                            <?= esc_html($vars['message']) ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <form id="gabt-settings-form" method="post" class="gabt-grid gabt-grid-2">
+                <?php wp_nonce_field('gabt_settings', 'gabt_nonce'); ?>
+                
+                <!-- Sezione Alloggiati Web -->
+                <div class="gabt-card">
+                    <div class="gabt-card__header">
+                        <h2>🏛️ Servizio Alloggiati Web</h2>
+                    </div>
+                    <div class="gabt-card__content">
+                        <div class="gabt-form__group">
+                            <label class="gabt-form__label" for="alloggiati_username">
+                                Username *
+                            </label>
+                            <input 
+                                type="text" 
+                                id="alloggiati_username" 
+                                name="alloggiati_username" 
+                                value="<?= esc_attr($settings['alloggiati']['username'] ?? '') ?>"
+                                class="gabt-form__input"
+                                placeholder="Il tuo username Alloggiati Web"
+                                required
+                            />
+                            <div class="gabt-form__help">
+                                Username fornito dalla Questura per l'accesso al servizio
+                            </div>
+                        </div>
+
+                        <div class="gabt-form__group">
+                            <label class="gabt-form__label" for="alloggiati_password">
+                                Password *
+                            </label>
+                            <input 
+                                type="password" 
+                                id="alloggiati_password" 
+                                name="alloggiati_password" 
+                                value="<?= esc_attr($settings['alloggiati']['password'] ?? '') ?>"
+                                class="gabt-form__input"
+                                placeholder="La tua password"
+                                required
+                            />
+                        </div>
+
+                        <div class="gabt-form__group">
+                            <label class="gabt-form__label" for="alloggiati_ws_key">
+                                Web Service Key *
+                            </label>
+                            <input 
+                                type="text" 
+                                id="alloggiati_ws_key" 
+                                name="alloggiati_ws_key" 
+                                value="<?= esc_attr($settings['alloggiati']['ws_key'] ?? '') ?>"
+                                class="gabt-form__input"
+                                placeholder="Chiave WS fornita dalla Polizia"
+                                required
+                            />
+                            <div class="gabt-form__help">
+                                Chiave del web service fornita dalla Polizia di Stato
+                            </div>
+                        </div>
+
+                        <div class="gabt-form__group">
+                            <div class="gabt-checkbox">
+                                <input 
+                                    type="checkbox" 
+                                    id="alloggiati_auto_send" 
+                                    name="alloggiati_auto_send" 
+                                    value="1"
+                                    <?= checked($settings['alloggiati']['auto_send'] ?? 0, 1, false) ?>
+                                />
+                                <label for="alloggiati_auto_send">
+                                    Abilita invio automatico schedine
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="gabt-form__group">
+                            <label class="gabt-form__label" for="alloggiati_send_time">
+                                Orario Invio Automatico
+                            </label>
+                            <input 
+                                type="time" 
+                                id="alloggiati_send_time" 
+                                name="alloggiati_send_time" 
+                                value="<?= esc_attr($settings['alloggiati']['send_time'] ?? '02:00') ?>"
+                                class="gabt-form__input"
+                            />
+                            <div class="gabt-form__help">
+                                Orario giornaliero per l'invio automatico delle schedine
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sezione Struttura -->
+                <div class="gabt-card">
+                    <div class="gabt-card__header">
+                        <h2>🏨 Dati Struttura Ricettiva</h2>
+                    </div>
+                    <div class="gabt-card__content">
+                        <div class="gabt-form__group">
+                            <label class="gabt-form__label" for="accommodation_name">
+                                Nome Struttura *
+                            </label>
+                            <input 
+                                type="text" 
+                                id="accommodation_name" 
+                                name="accommodation_name" 
+                                value="<?= esc_attr($settings['accommodation']['name'] ?? get_bloginfo('name')) ?>"
+                                class="gabt-form__input"
+                                placeholder="Nome della tua struttura"
+                                required
+                            />
+                        </div>
+
+                        <div class="gabt-form__group">
+                            <label class="gabt-form__label" for="accommodation_address">
+                                Indirizzo Completo
+                            </label>
+                            <textarea 
+                                id="accommodation_address" 
+                                name="accommodation_address" 
+                                rows="3"
+                                class="gabt-form__input"
+                                placeholder="Via, numero civico, CAP, città, provincia"
+                            ><?= esc_textarea($settings['accommodation']['address'] ?? '') ?></textarea>
+                        </div>
+
+                        <div class="gabt-grid gabt-grid-2">
+                            <div class="gabt-form__group">
+                                <label class="gabt-form__label" for="accommodation_phone">
+                                    Telefono
+                                </label>
+                                <input 
+                                    type="tel" 
+                                    id="accommodation_phone" 
+                                    name="accommodation_phone" 
+                                    value="<?= esc_attr($settings['accommodation']['phone'] ?? '') ?>"
+                                    class="gabt-form__input"
+                                    placeholder="+39 075 123456"
+                                />
+                            </div>
+
+                            <div class="gabt-form__group">
+                                <label class="gabt-form__label" for="accommodation_email">
+                                    Email Struttura
+                                </label>
+                                <input 
+                                    type="email" 
+                                    id="accommodation_email" 
+                                    name="accommodation_email" 
+                                    value="<?= esc_attr($settings['accommodation']['email'] ?? get_option('admin_email')) ?>"
+                                    class="gabt-form__input"
+                                    placeholder="info@struttura.it"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="gabt-grid gabt-grid-2">
+                            <div class="gabt-form__group">
+                                <label class="gabt-form__label" for="accommodation_comune">
+                                    Comune
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="accommodation_comune" 
+                                    name="accommodation_comune" 
+                                    value="<?= esc_attr($settings['accommodation']['comune'] ?? '') ?>"
+                                    class="gabt-form__input"
+                                    placeholder="Es. Castiglione del Lago"
+                                />
+                            </div>
+
+                            <div class="gabt-form__group">
+                                <label class="gabt-form__label" for="accommodation_provincia">
+                                    Provincia
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="accommodation_provincia" 
+                                    name="accommodation_provincia" 
+                                    value="<?= esc_attr($settings['accommodation']['provincia'] ?? '') ?>"
+                                    class="gabt-form__input"
+                                    placeholder="PG"
+                                    maxlength="2"
+                                    style="text-transform: uppercase;"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sezione Email -->
+                <div class="gabt-card">
+                    <div class="gabt-card__header">
+                        <h2>📧 Configurazione Email</h2>
+                    </div>
+                    <div class="gabt-card__content">
+                        <div class="gabt-grid gabt-grid-2">
+                            <div class="gabt-form__group">
+                                <label class="gabt-form__label" for="email_from_name">
+                                    Nome Mittente
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="email_from_name" 
+                                    name="email_from_name" 
+                                    value="<?= esc_attr($settings['email']['from_name'] ?? get_bloginfo('name')) ?>"
+                                    class="gabt-form__input"
+                                />
+                            </div>
+
+                            <div class="gabt-form__group">
+                                <label class="gabt-form__label" for="email_from_email">
+                                    Email Mittente
+                                </label>
+                                <input 
+                                    type="email" 
+                                    id="email_from_email" 
+                                    name="email_from_email" 
+                                    value="<?= esc_attr($settings['email']['from_email'] ?? get_option('admin_email')) ?>"
+                                    class="gabt-form__input"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="gabt-form__group">
+                            <div class="gabt-checkbox">
+                                <input 
+                                    type="checkbox" 
+                                    id="email_admin_notifications" 
+                                    name="email_admin_notifications" 
+                                    value="1"
+                                    <?= checked($settings['email']['admin_notifications'] ?? 1, 1, false) ?>
+                                />
+                                <label for="email_admin_notifications">
+                                    Ricevi notifiche email per nuove prenotazioni e invii schedine
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sezione Avanzate -->
+                <div class="gabt-card">
+                    <div class="gabt-card__header">
+                        <h2>🛠️ Impostazioni Avanzate</h2>
+                    </div>
+                    <div class="gabt-card__content">
+                        <div class="gabt-form__group">
+                            <div class="gabt-checkbox">
+                                <input 
+                                    type="checkbox" 
+                                    id="debug_mode" 
+                                    name="debug_mode" 
+                                    value="1"
+                                    <?= checked($settings['general']['debug_mode'] ?? 0, 1, false) ?>
+                                />
+                                <label for="debug_mode">
+                                    Modalità debug (genera log dettagliati)
+                                </label>
+                            </div>
+                            <div class="gabt-form__help">
+                                Attiva solo se richiesto dal supporto tecnico
+                            </div>
+                        </div>
+
+                        <div class="gabt-form__group">
+                            <label class="gabt-form__label" for="log_retention_days">
+                                Giorni Conservazione Log
+                            </label>
+                            <input 
+                                type="number" 
+                                id="log_retention_days" 
+                                name="log_retention_days" 
+                                value="<?= esc_attr($settings['general']['log_retention_days'] ?? 30) ?>"
+                                class="gabt-form__input"
+                                min="1" 
+                                max="365"
+                                style="max-width: 100px;"
+                            />
+                            <div class="gabt-form__help">
+                                I log più vecchi verranno eliminati automaticamente
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Pulsanti Azione -->
+            <div class="gabt-flex gabt-justify-between gabt-items-center gabt-mt-8">
+                <div class="gabt-flex gabt-gap-4">
+                    <button 
+                        type="submit" 
+                        form="gabt-settings-form"
+                        name="save_settings"
+                        class="gabt-btn gabt-btn--primary gabt-btn--lg"
+                    >
+                        💾 Salva Impostazioni
+                    </button>
+                    <button 
+                        type="button" 
+                        id="gabt-reset-settings"
+                        class="gabt-btn gabt-btn--secondary"
+                    >
+                        🔄 Reset
+                    </button>
+                </div>
+                
+                <div class="gabt-text-sm" style="color: var(--gabt-gray-500);">
+                    Ultima modifica: <?= date('d/m/Y H:i') ?>
+                </div>
+            </div>
+
+            <!-- Statistiche Sistema -->
+            <div class="gabt-card gabt-mt-8">
+                <div class="gabt-card__header">
+                    <h2>📊 Stato Sistema</h2>
+                </div>
+                <div class="gabt-card__content">
+                    <div class="gabt-stats-grid">
+                        <div class="gabt-stat-card gabt-stat-card--primary">
+                            <div class="gabt-stat-card__title">Plugin</div>
+                            <div class="gabt-stat-card__value"><?= GABT_VERSION ?></div>
+                        </div>
+                        
+                        <div class="gabt-stat-card gabt-stat-card--success">
+                            <div class="gabt-stat-card__title">WordPress</div>
+                            <div class="gabt-stat-card__value"><?= get_bloginfo('version') ?></div>
+                        </div>
+                        
+                        <div class="gabt-stat-card gabt-stat-card--info">
+                            <div class="gabt-stat-card__title">PHP</div>
+                            <div class="gabt-stat-card__value"><?= PHP_VERSION ?></div>
+                        </div>
+                        
+                        <div class="gabt-stat-card gabt-stat-card--warning">
+                            <div class="gabt-stat-card__title">API Status</div>
+                            <div class="gabt-stat-card__value">
+                                <span id="gabt-api-status">🔄</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <details style="margin-top: var(--gabt-space-6);">
+                        <summary style="cursor: pointer; font-weight: 500;">
+                            🔍 Informazioni Debug
+                        </summary>
+                        <div style="margin-top: var(--gabt-space-4); padding: var(--gabt-space-4); background: var(--gabt-gray-50); border-radius: var(--gabt-radius); font-family: var(--gabt-font-mono); font-size: 0.75rem;">
+                            <strong>Plugin Path:</strong> <?= esc_html(GABT_PLUGIN_PATH) ?><br>
+                            <strong>Plugin URL:</strong> <?= esc_html(GABT_PLUGIN_URL) ?><br>
+                            <strong>REST API Base:</strong> <?= rest_url('gabt/v1') ?><br>
+                            <strong>Current User:</strong> <?= get_current_user_id() ?> (<?= current_user_can('manage_options') ? 'Admin' : 'User' ?>)<br>
+                            <strong>Environment:</strong> <?= wp_get_environment_type() ?><br>
+                            <strong>Debug Mode:</strong> <?= defined('WP_DEBUG') && WP_DEBUG ? 'Enabled' : 'Disabled' ?><br>
+                            <strong>Memory Limit:</strong> <?= ini_get('memory_limit') ?><br>
+                            <strong>Max Execution Time:</strong> <?= ini_get('max_execution_time') ?>s
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        // Test stato API al caricamento della pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusEl = document.getElementById('gabt-api-status');
+            
+            if (typeof window.gabtApp !== 'undefined') {
+                // Test rapido delle API
+                window.gabtApp.apiCall('GET', '/settings')
+                    .then(() => {
+                        statusEl.textContent = '✅';
+                        statusEl.title = 'API funzionanti';
+                    })
+                    .catch(() => {
+                        statusEl.textContent = '❌';
+                        statusEl.title = 'Problemi API';
+                    });
+            }
+        });
+        </script>
+        <?php
+    }
+
     /**
      * Template di fallback quando il file non esiste
      */

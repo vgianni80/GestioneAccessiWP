@@ -1,9 +1,7 @@
 <?php
 /**
- * Classe principale del plugin Gestione Accessi BluTrasimeno
- * 
- * @package GestioneAccessiBT
- * @since 1.3.0
+ * Plugin Core moderno con REST API
+ * Elimina completamente AJAX legacy e usa tecnologie 2024
  */
 
 if (!defined('ABSPATH')) {
@@ -12,32 +10,19 @@ if (!defined('ABSPATH')) {
 
 class GABT_Plugin_Core {
     
-    /**
-     * Istanza singleton
-     */
     private static $instance = null;
-    
-    /**
-     * Componenti del plugin
-     */
     private $admin_menu;
     private $admin_pages;
     private $frontend_handler;
     private $database_manager;
-    private $ajax_handlers;
+    private $rest_api;
     private $cron_manager;
     
-    /**
-     * Costruttore privato per singleton
-     */
     private function __construct() {
         $this->init_hooks();
         $this->load_components();
     }
     
-    /**
-     * Ottiene l'istanza singleton
-     */
     public static function get_instance() {
         if (null === self::$instance) {
             self::$instance = new self();
@@ -52,7 +37,6 @@ class GABT_Plugin_Core {
         add_action('init', array($this, 'init'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
-        // add_action('admin_menu', array($this, 'add_admin_menu'));
     }
     
     /**
@@ -60,12 +44,17 @@ class GABT_Plugin_Core {
      */
     private function load_components() {
         try {
-            // Carica sempre il database manager per primo
+            // Database Manager (sempre per primo)
             if (class_exists('GABT_Database_Manager')) {
                 $this->database_manager = new GABT_Database_Manager();
             }
             
-            // Carica componenti admin solo nell'area admin
+            // REST API (sostituisce AJAX)
+            if (class_exists('GABT_REST_API')) {
+                $this->rest_api = new GABT_REST_API();
+            }
+            
+            // Componenti admin
             if (is_admin()) {
                 if (class_exists('GABT_Admin_Menu')) {
                     $this->admin_menu = new GABT_Admin_Menu();
@@ -74,18 +63,14 @@ class GABT_Plugin_Core {
                 if (class_exists('GABT_Admin_Pages')) {
                     $this->admin_pages = new GABT_Admin_Pages();
                 }
-                
-                if (class_exists('GABT_Ajax_Handlers')) {
-                    $this->ajax_handlers = new GABT_Ajax_Handlers();
-                }
             }
             
-            // Carica componenti frontend
+            // Componenti frontend
             if (class_exists('GABT_Frontend_Handler')) {
                 $this->frontend_handler = new GABT_Frontend_Handler();
             }
             
-            // Carica cron manager
+            // Cron manager
             if (class_exists('GABT_Cron_Manager')) {
                 $this->cron_manager = new GABT_Cron_Manager();
             }
@@ -99,180 +84,77 @@ class GABT_Plugin_Core {
      * Inizializzazione del plugin
      */
     public function init() {
-        // Carica il text domain per le traduzioni
+        // Text domain
         load_plugin_textdomain('gestione-accessi-bt', false, dirname(plugin_basename(GABT_PLUGIN_PATH)) . '/languages');
         
-        // Inizializza i componenti
+        // Inizializza componenti in ordine
         if ($this->database_manager) {
             $this->database_manager->init();
+            error_log('GABT: ✅ Database Manager inizializzato');
+        }
+        
+        // IMPORTANTE: REST API sostituisce AJAX
+        if ($this->rest_api) {
+            $this->rest_api->init();
+            error_log('GABT: ✅ REST API inizializzata');
+        } else {
+            error_log('GABT: ⚠️ REST API non disponibile');
         }
         
         if ($this->admin_menu) {
             $this->admin_menu->init();
+            error_log('GABT: ✅ Admin Menu inizializzato');
         }
         
         if ($this->admin_pages) {
             $this->admin_pages->init();
+            error_log('GABT: ✅ Admin Pages inizializzato');
         }
         
         if ($this->frontend_handler) {
             $this->frontend_handler->init();
-        }
-        
-        if ($this->ajax_handlers) {
-            $this->ajax_handlers->init();
+            error_log('GABT: ✅ Frontend Handler inizializzato');
         }
         
         if ($this->cron_manager) {
             $this->cron_manager->init();
+            error_log('GABT: ✅ Cron Manager inizializzato');
         }
-    }
-    
-    // /**
-    //  * Aggiunge il menu admin
-    //  */
-    // public function add_admin_menu() {
-    //     if (!current_user_can('manage_options')) {
-    //         return;
-    //     }
         
-    //     // CORRETTO: Ordine giusto dei parametri per add_menu_page()
-    //     // ($page_title, $menu_title, $capability, $menu_slug, $callback, $icon_url, $position)
-    //     add_menu_page(
-    //         'Gestione Accessi BluTrasimeno',  // $page_title
-    //         'Gestione Accessi BluTrasimeno',            // $menu_title  
-    //         'manage_options',                 // $capability
-    //         'gestione-accessi-bt',            // $menu_slug
-    //         array($this, 'admin_page_dashboard'), // $callback
-    //         'dashicons-groups',               // $icon_url
-    //         30                                // $position
-    //     );
-        
-    //     // CORRETTO: Ordine giusto dei parametri per add_submenu_page()
-    //     // ($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback)
-    //     add_submenu_page(
-    //         'gestione-accessi-bt',            // $parent_slug
-    //         'Dashboard',                      // $page_title
-    //         'Dashboard',                      // $menu_title
-    //         'manage_options',                 // $capability
-    //         'gestione-accessi-bt',            // $menu_slug
-    //         array($this, 'admin_page_dashboard') // $callback
-    //     );
-        
-    //     add_submenu_page(
-    //         'gestione-accessi-bt',
-    //         'Nuova Prenotazione',
-    //         'Nuova Prenotazione',
-    //         'manage_options',
-    //         'gestione-accessi-bt-new-booking',
-    //         array($this, 'admin_page_new_booking')
-    //     );
-        
-    //     add_submenu_page(
-    //         'gestione-accessi-bt',
-    //         'Impostazioni',
-    //         'Impostazioni',
-    //         'manage_options',
-    //         'gestione-accessi-bt-settings',
-    //         array($this, 'admin_page_settings')
-    //     );
-        
-    //     add_submenu_page(
-    //         'gestione-accessi-bt',
-    //         'Test Connessione',
-    //         'Test Connessione',
-    //         'manage_options',
-    //         'gestione-accessi-bt-test',
-    //         array($this, 'admin_page_test')
-    //     );
-    // }
-    
-    /**
-     * Pagina dashboard admin
-     */
-    public function admin_page_dashboard() {
-        if ($this->admin_pages) {
-            $this->admin_pages->main_page();
-        } else {
-            $this->admin_page_fallback('Dashboard');
-        }
+        error_log('GABT: 🚀 Inizializzazione completa - Tecnologie moderne attive');
     }
     
     /**
-     * Pagina nuova prenotazione
-     */
-    public function admin_page_new_booking() {
-        if ($this->admin_pages) {
-            $this->admin_pages->new_booking_page();
-        } else {
-            $this->admin_page_fallback('Nuova Prenotazione');
-        }
-    }
-    
-    /**
-     * Pagina impostazioni
-     */
-    public function admin_page_settings() {
-        if ($this->admin_pages) {
-            $this->admin_pages->settings_page();
-        } else {
-            $this->admin_page_fallback('Impostazioni');
-        }
-    }
-    
-    /**
-     * Pagina test connessione
-     */
-    public function admin_page_test() {
-        if ($this->admin_pages) {
-            $this->admin_pages->test_page();
-        } else {
-            $this->admin_page_fallback('Test Connessione');
-        }
-    }
-    
-    /**
-     * Pagina di fallback quando i componenti non sono caricati
-     */
-    private function admin_page_fallback($page_title) {
-        echo '<div class="wrap">';
-        echo '<h1>' . esc_html($page_title) . '</h1>';
-        echo '<div class="notice notice-warning">';
-        echo '<p><strong>Attenzione:</strong> Alcuni componenti del plugin non sono stati caricati correttamente.</p>';
-        echo '<p>La pagina ' . esc_html($page_title) . ' non è disponibile al momento.</p>';
-        echo '</div>';
-        echo '<p><a href="' . admin_url('admin.php?page=gestione-accessi-bt') . '" class="button">Torna alla Dashboard</a></p>';
-        echo '</div>';
-    }
-    
-    /**
-     * Carica gli script frontend
+     * Script frontend moderni
      */
     public function enqueue_frontend_scripts() {
-        // Carica solo se necessario
         if (!$this->is_plugin_page()) {
             return;
         }
         
+        // CSS moderno con custom properties
         wp_enqueue_style(
             'gabt-frontend-style', 
-            GABT_PLUGIN_URL . 'assets/css/frontend.css', 
+            GABT_PLUGIN_URL . 'assets/css/frontend-modern.css', 
             array(), 
             GABT_VERSION
         );
         
+        // JavaScript moderno (ES6+)
         wp_enqueue_script(
             'gabt-frontend-script', 
-            GABT_PLUGIN_URL . 'assets/js/frontend.js', 
+            GABT_PLUGIN_URL . 'assets/js/frontend-modern.js', 
             array(), 
             GABT_VERSION, 
-            true
+            array('strategy' => 'defer') // WordPress 6.3+
         );
         
-        wp_localize_script('gabt-frontend-script', 'gabt_frontend_vars', array(
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('gabt_frontend_nonce'),
-            'booking_status_url' => home_url('/stato-prenotazione/'),
+        // Configurazione moderna con REST API
+        wp_localize_script('gabt-frontend-script', 'gabFrontend', array(
+            'rest_url' => rest_url(),
+            'nonce' => wp_create_nonce('wp_rest'),
+            'api_namespace' => 'gabt/v1',
+            'current_user' => get_current_user_id(),
             'strings' => array(
                 'loading' => __('Caricamento...', 'gestione-accessi-bt'),
                 'error' => __('Errore', 'gestione-accessi-bt'),
@@ -282,88 +164,208 @@ class GABT_Plugin_Core {
     }
     
     /**
-     * Carica gli script admin
+     * Script admin moderni
      */
     public function enqueue_admin_scripts($hook) {
-        // Carica solo nelle pagine del plugin
+        // Debug logging migliorato
+        error_log("GABT: Admin scripts per hook: {$hook}");
+        
         if (strpos($hook, 'gestione-accessi-bt') === false) {
             return;
         }
         
+        // Verifica esistenza file (per debug)
+        $js_path = GABT_PLUGIN_PATH . 'assets/js/admin-modern.js';
+        $css_path = GABT_PLUGIN_PATH . 'assets/css/admin-modern.css';
+        
+        if (!file_exists($js_path)) {
+            error_log("GABT: File JS non trovato: {$js_path}");
+            // Fallback al file normale
+            $js_path = GABT_PLUGIN_PATH . 'assets/js/admin.js';
+            $js_url = GABT_PLUGIN_URL . 'assets/js/admin.js';
+        } else {
+            $js_url = GABT_PLUGIN_URL . 'assets/js/admin-modern.js';
+        }
+        
+        if (!file_exists($css_path)) {
+            $css_url = GABT_PLUGIN_URL . 'assets/css/admin.css';
+        } else {
+            $css_url = GABT_PLUGIN_URL . 'assets/css/admin-modern.css';
+        }
+        
+        // CSS moderno
         wp_enqueue_style(
             'gabt-admin-style', 
-            GABT_PLUGIN_URL . 'assets/css/admin.css', 
+            $css_url,
             array(), 
             GABT_VERSION
         );
         
+        // JavaScript moderno con ES6 modules
         wp_enqueue_script(
             'gabt-admin-script', 
-            GABT_PLUGIN_URL . 'assets/js/admin.js', 
+            $js_url,
             array(), 
             GABT_VERSION, 
-            true
+            array(
+                'strategy' => 'defer',
+                'in_footer' => true
+            )
         );
         
-        wp_localize_script('gabt-admin-script', 'gabt_admin_vars', array(
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('gabt_admin_nonce'),
+        // Configurazione moderna completa
+        wp_localize_script('gabt-admin-script', 'gabAdmin', array(
+            // REST API (sostituisce ajax_url)
+            'rest_url' => rest_url(),
+            'nonce' => wp_create_nonce('wp_rest'),
+            'api_namespace' => 'gabt/v1',
+            
+            // Info plugin
+            'plugin_url' => GABT_PLUGIN_URL,
+            'plugin_version' => GABT_VERSION,
+            'current_page' => $hook,
+            
+            // User info
+            'current_user' => array(
+                'id' => get_current_user_id(),
+                'can_manage' => current_user_can('manage_options')
+            ),
+            
+            // Configurazione avanzata
+            'config' => array(
+                'debug' => defined('WP_DEBUG') && WP_DEBUG,
+                'environment' => wp_get_environment_type(),
+                'wp_version' => get_bloginfo('version'),
+                'php_version' => PHP_VERSION
+            ),
+            
+            // Stringhe localizzate
             'strings' => array(
                 'loading' => __('Caricamento...', 'gestione-accessi-bt'),
                 'error' => __('Errore', 'gestione-accessi-bt'),
                 'success' => __('Successo', 'gestione-accessi-bt'),
-                'confirm_delete' => __('Sei sicuro di voler eliminare questo elemento?', 'gestione-accessi-bt')
+                'confirm_delete' => __('Sei sicuro di voler eliminare questo elemento?', 'gestione-accessi-bt'),
+                'test_connection' => __('Test connessione in corso...', 'gestione-accessi-bt'),
+                'connection_success' => __('Connessione riuscita!', 'gestione-accessi-bt'),
+                'connection_failed' => __('Connessione fallita', 'gestione-accessi-bt'),
+                'save_success' => __('Salvato con successo', 'gestione-accessi-bt'),
+                'save_error' => __('Errore durante il salvataggio', 'gestione-accessi-bt'),
+                'network_error' => __('Errore di rete', 'gestione-accessi-bt'),
+                'invalid_response' => __('Risposta del server non valida', 'gestione-accessi-bt'),
+                'unauthorized' => __('Accesso non autorizzato', 'gestione-accessi-bt'),
+                'server_error' => __('Errore interno del server', 'gestione-accessi-bt')
             )
         ));
+        
+        error_log("GABT: Script moderni caricati per {$hook}");
     }
     
     /**
      * Verifica se siamo in una pagina del plugin
      */
     private function is_plugin_page() {
-        // Nel frontend, verifica query vars personalizzate
         if (!is_admin()) {
             return !empty(get_query_var('gabt_action'));
         }
         
-        // Nell'admin, verifica la pagina corrente
         $screen = get_current_screen();
         return $screen && strpos($screen->id, 'gestione-accessi-bt') !== false;
     }
     
     /**
-     * Ottiene il database manager
+     * Ottiene informazioni API per JavaScript
+     */
+    public function get_api_info() {
+        $endpoints = array();
+        
+        if ($this->rest_api) {
+            $endpoints = array(
+                'test_connection' => rest_url('gabt/v1/test-connection'),
+                'settings' => rest_url('gabt/v1/settings'),
+                'bookings' => rest_url('gabt/v1/bookings'),
+                'stats' => rest_url('gabt/v1/stats')
+            );
+        }
+        
+        return array(
+            'namespace' => 'gabt/v1',
+            'base_url' => rest_url('gabt/v1'),
+            'endpoints' => $endpoints,
+            'nonce' => wp_create_nonce('wp_rest')
+        );
+    }
+    
+    /**
+     * Getters per componenti
      */
     public function get_database_manager() {
         return $this->database_manager;
     }
     
-    /**
-     * Ottiene l'admin menu
-     */
     public function get_admin_menu() {
         return $this->admin_menu;
     }
     
-    /**
-     * Ottiene il frontend handler
-     */
     public function get_frontend_handler() {
         return $this->frontend_handler;
     }
     
+    public function get_rest_api() {
+        return $this->rest_api;
+    }
+    
     /**
-     * Ottiene lo stato del plugin
+     * Stato del plugin per debugging
      */
     public function get_plugin_status() {
         return array(
             'version' => GABT_VERSION,
-            'database_manager' => $this->database_manager ? 'loaded' : 'not_loaded',
-            'admin_menu' => $this->admin_menu ? 'loaded' : 'not_loaded',
-            'admin_pages' => $this->admin_pages ? 'loaded' : 'not_loaded',
-            'frontend_handler' => $this->frontend_handler ? 'loaded' : 'not_loaded',
-            'ajax_handlers' => $this->ajax_handlers ? 'loaded' : 'not_loaded',
-            'cron_manager' => $this->cron_manager ? 'loaded' : 'not_loaded'
+            'components' => array(
+                'database_manager' => $this->database_manager ? 'loaded' : 'not_loaded',
+                'admin_menu' => $this->admin_menu ? 'loaded' : 'not_loaded',
+                'admin_pages' => $this->admin_pages ? 'loaded' : 'not_loaded',
+                'frontend_handler' => $this->frontend_handler ? 'loaded' : 'not_loaded',
+                'rest_api' => $this->rest_api ? 'loaded' : 'not_loaded',
+                'cron_manager' => $this->cron_manager ? 'loaded' : 'not_loaded'
+            ),
+            'api_info' => $this->get_api_info(),
+            'environment' => array(
+                'wp_version' => get_bloginfo('version'),
+                'php_version' => PHP_VERSION,
+                'debug_mode' => defined('WP_DEBUG') && WP_DEBUG,
+                'rest_enabled' => function_exists('rest_url')
+            )
+        );
+    }
+    
+    /**
+     * Metodi di utilità per sviluppo moderno
+     */
+    public function is_development_mode() {
+        return defined('WP_DEBUG') && WP_DEBUG;
+    }
+    
+    public function get_cache_buster() {
+        return $this->is_development_mode() ? time() : GABT_VERSION;
+    }
+    
+    /**
+     * Registra custom post types se necessario (approccio moderno)
+     */
+    public function register_custom_post_types() {
+        // Se in futuro volessimo usare CPT invece di tabelle custom
+        // Approccio più WordPress-native
+    }
+    
+    /**
+     * Hook per sviluppatori esterni
+     */
+    public function get_hooks() {
+        return array(
+            'gabt_after_booking_save' => 'Dopo il salvataggio di una prenotazione',
+            'gabt_before_schedine_send' => 'Prima dell\'invio delle schedine',
+            'gabt_after_schedine_send' => 'Dopo l\'invio delle schedine',
+            'gabt_settings_updated' => 'Dopo l\'aggiornamento delle impostazioni'
         );
     }
 }

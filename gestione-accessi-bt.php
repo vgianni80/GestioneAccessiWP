@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Gestione Accessi BluTrasimeno
- * Description: Plugin per gestione prenotazioni e comunicazioni automatiche al servizio Alloggiati Web della Polizia di Stato
+ * Description: Plugin moderno per gestione prenotazioni e comunicazioni automatiche al servizio Alloggiati Web della Polizia di Stato
  * Version: 1.3.0
  * Author: Gianni Valeri
  * Text Domain: gestione-accessi-bt
@@ -21,77 +21,61 @@ define('GABT_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('GABT_VERSION', '1.3.0');
 
 /**
- * Autoloader semplice per le classi del plugin
+ * Autoloader moderno e sicuro per PHP 8+
  */
 spl_autoload_register(function ($class_name) {
-    // Controlla se la classe appartiene al nostro plugin
-    if (strpos($class_name, 'GABT_') !== 0) {
-        return;
+    if (!is_string($class_name) || empty($class_name) || strpos($class_name, 'GABT_') !== 0) {
+        return false;
     }
     
-    // Converti il nome della classe in percorso file
     $class_file = str_replace('GABT_', '', $class_name);
-    $class_file = str_replace('_', '-', strtolower($class_file));
+    if (!is_string($class_file) || empty($class_file)) {
+        return false;
+    }
+    
+    $class_file = str_replace('_', '-', strtolower(trim($class_file)));
+    if (empty($class_file)) {
+        return false;
+    }
+    
     $class_file = 'class-' . $class_file . '.php';
     
-    // Directory di ricerca
+    if (!defined('GABT_PLUGIN_PATH') || !is_string(GABT_PLUGIN_PATH)) {
+        return false;
+    }
+    
+    $base_path = rtrim(GABT_PLUGIN_PATH, '/') . '/';
     $directories = [
-        GABT_PLUGIN_PATH . 'includes/',
-        GABT_PLUGIN_PATH . 'includes/admin/',
-        GABT_PLUGIN_PATH . 'includes/frontend/',
-        GABT_PLUGIN_PATH . 'includes/database/',
-        GABT_PLUGIN_PATH . 'includes/services/',
-        GABT_PLUGIN_PATH . 'includes/ajax/',
-        GABT_PLUGIN_PATH . 'includes/cron/',
+        $base_path . 'includes/',
+        $base_path . 'includes/admin/',
+        $base_path . 'includes/frontend/',
+        $base_path . 'includes/database/',
+        $base_path . 'includes/services/',
+        $base_path . 'includes/rest-api/',
+        $base_path . 'includes/cron/',
     ];
     
     foreach ($directories as $directory) {
-        $file_path = $directory . $class_file;
-        if (file_exists($file_path)) {
-            require_once $file_path;
-            return;
-        }
-    }
-});
-
-/**
- * Funzione di attivazione sicura
- */
-function gabt_activate_plugin() {
-    try {
-        // Verifica requisiti minimi
-        if (version_compare(PHP_VERSION, '7.4', '<')) {
-            wp_die('Questo plugin richiede PHP 7.4 o superiore. Versione attuale: ' . PHP_VERSION);
+        if (!is_string($directory) || empty($directory)) {
+            continue;
         }
         
-        // Verifica estensioni PHP necessarie
-        $required_extensions = ['mysqli', 'curl'];
-        foreach ($required_extensions as $ext) {
-            if (!extension_loaded($ext)) {
-                wp_die("Estensione PHP mancante: {$ext}");
+        $file_path = $directory . $class_file;
+        
+        if (file_exists($file_path) && is_readable($file_path)) {
+            try {
+                require_once $file_path;
+                if (class_exists($class_name, false)) {
+                    return true;
+                }
+            } catch (Exception $e) {
+                error_log("GABT Autoloader: Errore caricamento {$file_path}: " . $e->getMessage());
             }
         }
-        
-        // Crea le tabelle database
-        gabt_create_database_tables();
-        
-        // Imposta opzioni di default
-        gabt_set_default_options();
-        
-        // Flush rewrite rules
-        flush_rewrite_rules();
-        
-        // Imposta versione del plugin
-        update_option('gabt_plugin_version', GABT_VERSION);
-        update_option('gabt_activation_time', current_time('timestamp'));
-        
-        return true;
-        
-    } catch (Exception $e) {
-        error_log('GABT Activation Error: ' . $e->getMessage());
-        wp_die('Errore durante l\'attivazione del plugin: ' . $e->getMessage());
     }
-}
+    
+    return false;
+});
 
 /**
  * Crea le tabelle del database
@@ -178,23 +162,25 @@ function gabt_create_database_tables() {
         KEY user_id (user_id)
     ) $charset_collate;";
     
-    // Esegui le query di creazione tabelle
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     
-    $results = [];
-    $results['bookings'] = dbDelta($sql_bookings);
-    $results['guests'] = dbDelta($sql_guests);
-    $results['logs'] = dbDelta($sql_logs);
-    
-    // Verifica errori
-    if ($wpdb->last_error) {
-        throw new Exception('Errore creazione tabelle database: ' . $wpdb->last_error);
+    try {
+        $results = [];
+        $results['bookings'] = dbDelta($sql_bookings);
+        $results['guests'] = dbDelta($sql_guests);
+        $results['logs'] = dbDelta($sql_logs);
+        
+        if ($wpdb->last_error) {
+            throw new Exception('Errore creazione tabelle database: ' . $wpdb->last_error);
+        }
+        
+        error_log('GABT: Tabelle database create con successo');
+        return $results;
+        
+    } catch (Exception $e) {
+        error_log('GABT: Errore creazione tabelle: ' . $e->getMessage());
+        return false;
     }
-    
-    // Log dell'attivazione
-    error_log('GABT: Tabelle database create durante attivazione');
-    
-    return $results;
 }
 
 /**
@@ -223,52 +209,130 @@ function gabt_set_default_options() {
 }
 
 /**
- * Funzione di disattivazione
+ * Attivazione plugin
+ */
+function gabt_activate_plugin() {
+    try {
+        error_log('GABT: 🚀 Avvio attivazione plugin moderno');
+        
+        // Verifica PHP
+        if (version_compare(PHP_VERSION, '7.4', '<')) {
+            wp_die('Plugin richiede PHP 7.4+. Versione corrente: ' . PHP_VERSION);
+        }
+        
+        // Verifica estensioni
+        $required_extensions = ['mysqli', 'curl', 'json'];
+        foreach ($required_extensions as $ext) {
+            if (!extension_loaded($ext)) {
+                wp_die("Estensione PHP mancante: {$ext}");
+            }
+        }
+        
+        // Crea tabelle
+        if (!function_exists('dbDelta')) {
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        }
+        
+        $db_result = gabt_create_database_tables();
+        if ($db_result === false) {
+            throw new Exception('Errore creazione tabelle database');
+        }
+        
+        // Opzioni default
+        gabt_set_default_options();
+        
+        // Flush rewrite rules per REST API
+        flush_rewrite_rules();
+        
+        // Versione e timestamp
+        update_option('gabt_plugin_version', GABT_VERSION);
+        update_option('gabt_activation_time', current_time('timestamp'));
+        
+        // Messaggio di successo
+        set_transient('gabt_activation_notice', true, 30);
+        
+        error_log('GABT: ✅ Plugin attivato con successo - versione ' . GABT_VERSION);
+        
+        return true;
+        
+    } catch (Exception $e) {
+        error_log('GABT: ❌ Errore attivazione: ' . $e->getMessage());
+        wp_die('Errore attivazione plugin: ' . esc_html($e->getMessage()));
+    }
+}
+
+/**
+ * Disattivazione plugin
  */
 function gabt_deactivate_plugin() {
     try {
-        // Pulisci i cron job
+        error_log('GABT: 🔄 Disattivazione plugin');
+        
+        // Pulisci cron jobs
         wp_clear_scheduled_hook('gabt_daily_schedine_send');
         wp_clear_scheduled_hook('gabt_weekly_log_cleanup');
         
         // Flush rewrite rules
         flush_rewrite_rules();
         
+        error_log('GABT: ✅ Plugin disattivato correttamente');
+        
         return true;
+        
     } catch (Exception $e) {
-        error_log('GABT Deactivation Error: ' . $e->getMessage());
+        error_log('GABT: ❌ Errore disattivazione: ' . $e->getMessage());
         return false;
     }
 }
 
-// Hook di attivazione e disattivazione
-register_activation_hook(__FILE__, 'gabt_activate_plugin');
-register_deactivation_hook(__FILE__, 'gabt_deactivate_plugin');
-
 /**
- * Inizializza il plugin quando WordPress è pronto
+ * Inizializzazione plugin moderno
  */
 function gabt_init_plugin() {
     try {
-        // Carica la classe principale
+        error_log('GABT: 🔧 Inizializzazione plugin moderno');
+        
+        // Verifica costanti
+        if (!defined('GABT_PLUGIN_PATH') || !defined('GABT_VERSION')) {
+            throw new Exception('Costanti plugin non definite');
+        }
+        
+        // Carica classe principale
+        $core_file = GABT_PLUGIN_PATH . 'includes/class-plugin-core.php';
+        
+        if (!file_exists($core_file)) {
+            throw new Exception("File core non trovato: {$core_file}");
+        }
+        
         if (!class_exists('GABT_Plugin_Core')) {
-            require_once GABT_PLUGIN_PATH . 'includes/class-plugin-core.php';
+            require_once $core_file;
         }
         
-        // Inizializza il plugin
-        if (class_exists('GABT_Plugin_Core')) {
-            return GABT_Plugin_Core::get_instance();
+        if (!class_exists('GABT_Plugin_Core')) {
+            throw new Exception('Classe GABT_Plugin_Core non caricata');
         }
         
-        throw new Exception('Classe GABT_Plugin_Core non trovata');
+        // Inizializza istanza
+        $plugin_instance = GABT_Plugin_Core::get_instance();
+        
+        if (!$plugin_instance) {
+            throw new Exception('Impossibile creare istanza plugin');
+        }
+        
+        error_log('GABT: ✅ Plugin inizializzato con successo');
+        
+        return $plugin_instance;
         
     } catch (Exception $e) {
-        error_log('GABT Init Error: ' . $e->getMessage());
+        $error_message = 'GABT Init Error: ' . $e->getMessage();
+        error_log('GABT: ❌ ' . $error_message);
         
-        // Mostra errore solo agli amministratori
-        if (current_user_can('manage_options')) {
-            add_action('admin_notices', function() use ($e) {
-                echo '<div class="notice notice-error"><p><strong>Gestione Accessi BT:</strong> Errore di inizializzazione - ' . esc_html($e->getMessage()) . '</p></div>';
+        // Mostra errore admin
+        if (is_admin() && current_user_can('manage_options')) {
+            add_action('admin_notices', function() use ($error_message) {
+                echo '<div class="notice notice-error">';
+                echo '<p><strong>Gestione Accessi BT:</strong> ' . esc_html($error_message) . '</p>';
+                echo '</div>';
             });
         }
         
@@ -276,75 +340,81 @@ function gabt_init_plugin() {
     }
 }
 
-// Inizializza dopo che WordPress è completamente caricato
-add_action('plugins_loaded', 'gabt_init_plugin');
-
 /**
- * Aggiungi menu admin di base (fallback)
+ * Verifica compatibilità
  */
-// add_action('admin_menu', function() {
-//     if (!current_user_can('manage_options')) {
-//         return;
-//     }
+function gabt_check_compatibility() {
+    $issues = [];
     
-//     add_menu_page(
-//         'Gestione Accessi BluTrasimeno',
-//         'manage_options',
-//         'gestione-accessi-bt',
-//         'gabt_admin_page_fallback',
-//         'dashicons-admin-users',
-//         30
-//     );
-// });
-
-/**
- * Pagina admin di fallback
- */
-function gabt_admin_page_fallback() {
-    echo '<div class="wrap">';
-    echo '<h1>Gestione Accessi BluTrasimeno</h1>';
-    
-    if (class_exists('GABT_Plugin_Core')) {
-        echo '<div class="notice notice-success"><p>✅ Plugin caricato correttamente!</p></div>';
-        echo '<p>Se vedi questo messaggio, il plugin è attivo ma sta utilizzando la modalità di fallback.</p>';
-    } else {
-        echo '<div class="notice notice-error"><p>❌ Errore nel caricamento del plugin.</p></div>';
-        echo '<p>Controlla i log di WordPress per maggiori dettagli.</p>';
+    // PHP version
+    if (version_compare(PHP_VERSION, '7.4', '<')) {
+        $issues[] = 'PHP 7.4+ richiesto (attuale: ' . PHP_VERSION . ')';
     }
     
-    echo '<h2>Informazioni di Debug</h2>';
-    echo '<ul>';
-    echo '<li><strong>Versione:</strong> ' . GABT_VERSION . '</li>';
-    echo '<li><strong>Path Plugin:</strong> ' . GABT_PLUGIN_PATH . '</li>';
-    echo '<li><strong>URL Plugin:</strong> ' . GABT_PLUGIN_URL . '</li>';
-    echo '<li><strong>WordPress Debug:</strong> ' . (WP_DEBUG ? 'Abilitato' : 'Disabilitato') . '</li>';
-    echo '<li><strong>PHP Version:</strong> ' . PHP_VERSION . '</li>';
-    echo '</ul>';
+    // WordPress version
+    if (version_compare(get_bloginfo('version'), '5.0', '<')) {
+        $issues[] = 'WordPress 5.0+ richiesto';
+    }
     
-    // Test connessione database
-    global $wpdb;
-    $test_table = $wpdb->prefix . 'gabt_bookings';
-    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$test_table'") === $test_table;
+    // REST API
+    if (!function_exists('rest_url')) {
+        $issues[] = 'REST API WordPress non disponibile';
+    }
     
-    echo '<h3>Test Database</h3>';
-    echo '<p>Tabella prenotazioni: ' . ($table_exists ? '✅ Esistente' : '❌ Non trovata') . '</p>';
+    // Estensioni PHP
+    $required_extensions = ['mysqli', 'curl', 'json'];
+    foreach ($required_extensions as $ext) {
+        if (!extension_loaded($ext)) {
+            $issues[] = "Estensione PHP mancante: {$ext}";
+        }
+    }
     
-    echo '</div>';
+    return $issues;
 }
 
-/**
- * Messaggio di attivazione
- */
+// Hook di attivazione/disattivazione
+register_activation_hook(__FILE__, 'gabt_activate_plugin');
+register_deactivation_hook(__FILE__, 'gabt_deactivate_plugin');
+
+// Inizializzazione
+add_action('plugins_loaded', function() {
+    // Verifica compatibilità
+    $compatibility_issues = gabt_check_compatibility();
+    
+    if (!empty($compatibility_issues)) {
+        add_action('admin_notices', function() use ($compatibility_issues) {
+            echo '<div class="notice notice-error">';
+            echo '<p><strong>Gestione Accessi BT:</strong> Problemi di compatibilità:</p>';
+            echo '<ul>';
+            foreach ($compatibility_issues as $issue) {
+                echo '<li>' . esc_html($issue) . '</li>';
+            }
+            echo '</ul>';
+            echo '</div>';
+        });
+        return;
+    }
+    
+    // Inizializza plugin
+    gabt_init_plugin();
+    
+}, 10);
+
+// Messaggio di attivazione
 add_action('admin_notices', function() {
     if (get_transient('gabt_activation_notice')) {
         echo '<div class="notice notice-success is-dismissible">';
-        echo '<p><strong>Gestione Accessi BluTrasimeno</strong> attivato con successo! Versione: ' . GABT_VERSION . '</p>';
+        echo '<p><strong>🚀 Gestione Accessi BluTrasimeno</strong> attivato con tecnologie moderne! Versione: ' . GABT_VERSION . '</p>';
         echo '</div>';
         delete_transient('gabt_activation_notice');
     }
 });
 
-// Imposta il messaggio di attivazione
-if (get_option('gabt_plugin_version') === GABT_VERSION && !get_transient('gabt_activation_notice')) {
-    set_transient('gabt_activation_notice', true, 30);
+// Debug info per sviluppatori
+if (defined('WP_DEBUG') && WP_DEBUG) {
+    add_action('wp_footer', function() {
+        if (current_user_can('manage_options')) {
+            echo "<!-- GABT Debug: Plugin caricato, versione " . GABT_VERSION . " -->";
+        }
+    });
 }
