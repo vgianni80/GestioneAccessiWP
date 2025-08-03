@@ -282,20 +282,20 @@ add_action('plugins_loaded', 'gabt_init_plugin');
 /**
  * Aggiungi menu admin di base (fallback)
  */
-add_action('admin_menu', function() {
-    if (!current_user_can('manage_options')) {
-        return;
-    }
+// add_action('admin_menu', function() {
+//     if (!current_user_can('manage_options')) {
+//         return;
+//     }
     
-    add_menu_page(
-        'Gestione Accessi BluTrasimeno',
-        'manage_options',
-        'gestione-accessi-bt',
-        'gabt_admin_page_fallback',
-        'dashicons-admin-users',
-        30
-    );
-});
+//     add_menu_page(
+//         'Gestione Accessi BluTrasimeno',
+//         'manage_options',
+//         'gestione-accessi-bt',
+//         'gabt_admin_page_fallback',
+//         'dashicons-admin-users',
+//         30
+//     );
+// });
 
 /**
  * Pagina admin di fallback

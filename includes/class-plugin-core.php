@@ -128,64 +128,64 @@ class GABT_Plugin_Core {
         }
     }
     
-    /**
-     * Aggiunge il menu admin
-     */
-    public function add_admin_menu() {
-        if (!current_user_can('manage_options')) {
-            return;
-        }
+    // /**
+    //  * Aggiunge il menu admin
+    //  */
+    // public function add_admin_menu() {
+    //     if (!current_user_can('manage_options')) {
+    //         return;
+    //     }
         
-        // CORRETTO: Ordine giusto dei parametri per add_menu_page()
-        // ($page_title, $menu_title, $capability, $menu_slug, $callback, $icon_url, $position)
-        add_menu_page(
-            'Gestione Accessi BluTrasimeno',  // $page_title
-            'Gestione Accessi BluTrasimeno',            // $menu_title  
-            'manage_options',                 // $capability
-            'gestione-accessi-bt',            // $menu_slug
-            array($this, 'admin_page_dashboard'), // $callback
-            'dashicons-groups',               // $icon_url
-            30                                // $position
-        );
+    //     // CORRETTO: Ordine giusto dei parametri per add_menu_page()
+    //     // ($page_title, $menu_title, $capability, $menu_slug, $callback, $icon_url, $position)
+    //     add_menu_page(
+    //         'Gestione Accessi BluTrasimeno',  // $page_title
+    //         'Gestione Accessi BluTrasimeno',            // $menu_title  
+    //         'manage_options',                 // $capability
+    //         'gestione-accessi-bt',            // $menu_slug
+    //         array($this, 'admin_page_dashboard'), // $callback
+    //         'dashicons-groups',               // $icon_url
+    //         30                                // $position
+    //     );
         
-        // CORRETTO: Ordine giusto dei parametri per add_submenu_page()
-        // ($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback)
-        add_submenu_page(
-            'gestione-accessi-bt',            // $parent_slug
-            'Dashboard',                      // $page_title
-            'Dashboard',                      // $menu_title
-            'manage_options',                 // $capability
-            'gestione-accessi-bt',            // $menu_slug
-            array($this, 'admin_page_dashboard') // $callback
-        );
+    //     // CORRETTO: Ordine giusto dei parametri per add_submenu_page()
+    //     // ($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback)
+    //     add_submenu_page(
+    //         'gestione-accessi-bt',            // $parent_slug
+    //         'Dashboard',                      // $page_title
+    //         'Dashboard',                      // $menu_title
+    //         'manage_options',                 // $capability
+    //         'gestione-accessi-bt',            // $menu_slug
+    //         array($this, 'admin_page_dashboard') // $callback
+    //     );
         
-        add_submenu_page(
-            'gestione-accessi-bt',
-            'Nuova Prenotazione',
-            'Nuova Prenotazione',
-            'manage_options',
-            'gestione-accessi-bt-new-booking',
-            array($this, 'admin_page_new_booking')
-        );
+    //     add_submenu_page(
+    //         'gestione-accessi-bt',
+    //         'Nuova Prenotazione',
+    //         'Nuova Prenotazione',
+    //         'manage_options',
+    //         'gestione-accessi-bt-new-booking',
+    //         array($this, 'admin_page_new_booking')
+    //     );
         
-        add_submenu_page(
-            'gestione-accessi-bt',
-            'Impostazioni',
-            'Impostazioni',
-            'manage_options',
-            'gestione-accessi-bt-settings',
-            array($this, 'admin_page_settings')
-        );
+    //     add_submenu_page(
+    //         'gestione-accessi-bt',
+    //         'Impostazioni',
+    //         'Impostazioni',
+    //         'manage_options',
+    //         'gestione-accessi-bt-settings',
+    //         array($this, 'admin_page_settings')
+    //     );
         
-        add_submenu_page(
-            'gestione-accessi-bt',
-            'Test Connessione',
-            'Test Connessione',
-            'manage_options',
-            'gestione-accessi-bt-test',
-            array($this, 'admin_page_test')
-        );
-    }
+    //     add_submenu_page(
+    //         'gestione-accessi-bt',
+    //         'Test Connessione',
+    //         'Test Connessione',
+    //         'manage_options',
+    //         'gestione-accessi-bt-test',
+    //         array($this, 'admin_page_test')
+    //     );
+    // }
     
     /**
      * Pagina dashboard admin
