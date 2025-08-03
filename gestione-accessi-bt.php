@@ -8,7 +8,6 @@
  * Requires at least: 5.0
  * Tested up to: 6.4
  * Requires PHP: 7.4
- * Network: false
  */
 
 // Prevenire accesso diretto
@@ -289,7 +288,6 @@ add_action('admin_menu', function() {
     }
     
     add_menu_page(
-        'Gestione Accessi BT',
         'Gestione Accessi BT',
         'manage_options',
         'gestione-accessi-bt',

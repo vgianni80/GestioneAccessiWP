@@ -139,7 +139,6 @@ class GABT_Plugin_Core {
         // Menu principale
         add_menu_page(
             'Gestione Accessi BluTrasimeno',
-            'Gestione Accessi BT',
             'manage_options',
             'gestione-accessi-bt',
             array($this, 'admin_page_dashboard'),
@@ -151,7 +150,6 @@ class GABT_Plugin_Core {
         add_submenu_page(
             'gestione-accessi-bt',
             'Dashboard',
-            'Dashboard',
             'manage_options',
             'gestione-accessi-bt',
             array($this, 'admin_page_dashboard')
@@ -159,7 +157,6 @@ class GABT_Plugin_Core {
         
         add_submenu_page(
             'gestione-accessi-bt',
-            'Nuova Prenotazione',
             'Nuova Prenotazione',
             'manage_options',
             'gestione-accessi-bt-new-booking',
@@ -169,7 +166,6 @@ class GABT_Plugin_Core {
         add_submenu_page(
             'gestione-accessi-bt',
             'Impostazioni',
-            'Impostazioni',
             'manage_options',
             'gestione-accessi-bt-settings',
             array($this, 'admin_page_settings')
@@ -177,7 +173,6 @@ class GABT_Plugin_Core {
         
         add_submenu_page(
             'gestione-accessi-bt',
-            'Test Connessione',
             'Test Connessione',
             'manage_options',
             'gestione-accessi-bt-test',
