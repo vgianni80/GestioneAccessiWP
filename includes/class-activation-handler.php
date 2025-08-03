@@ -211,4 +211,3 @@ class GABT_Activation_Handler {
                "{accommodation_name}";
     }
 }
-?>

@@ -136,27 +136,32 @@ class GABT_Plugin_Core {
             return;
         }
         
-        // Menu principale
+        // CORRETTO: Ordine giusto dei parametri per add_menu_page()
+        // ($page_title, $menu_title, $capability, $menu_slug, $callback, $icon_url, $position)
         add_menu_page(
-            'Gestione Accessi BluTrasimeno',
-            'manage_options',
-            'gestione-accessi-bt',
-            array($this, 'admin_page_dashboard'),
-            'dashicons-groups',
-            30
+            'Gestione Accessi BluTrasimeno',  // $page_title
+            'Gestione Accessi BluTrasimeno',            // $menu_title  
+            'manage_options',                 // $capability
+            'gestione-accessi-bt',            // $menu_slug
+            array($this, 'admin_page_dashboard'), // $callback
+            'dashicons-groups',               // $icon_url
+            30                                // $position
         );
         
-        // Sottomenu
+        // CORRETTO: Ordine giusto dei parametri per add_submenu_page()
+        // ($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback)
         add_submenu_page(
-            'gestione-accessi-bt',
-            'Dashboard',
-            'manage_options',
-            'gestione-accessi-bt',
-            array($this, 'admin_page_dashboard')
+            'gestione-accessi-bt',            // $parent_slug
+            'Dashboard',                      // $page_title
+            'Dashboard',                      // $menu_title
+            'manage_options',                 // $capability
+            'gestione-accessi-bt',            // $menu_slug
+            array($this, 'admin_page_dashboard') // $callback
         );
         
         add_submenu_page(
             'gestione-accessi-bt',
+            'Nuova Prenotazione',
             'Nuova Prenotazione',
             'manage_options',
             'gestione-accessi-bt-new-booking',
@@ -166,6 +171,7 @@ class GABT_Plugin_Core {
         add_submenu_page(
             'gestione-accessi-bt',
             'Impostazioni',
+            'Impostazioni',
             'manage_options',
             'gestione-accessi-bt-settings',
             array($this, 'admin_page_settings')
@@ -173,6 +179,7 @@ class GABT_Plugin_Core {
         
         add_submenu_page(
             'gestione-accessi-bt',
+            'Test Connessione',
             'Test Connessione',
             'manage_options',
             'gestione-accessi-bt-test',

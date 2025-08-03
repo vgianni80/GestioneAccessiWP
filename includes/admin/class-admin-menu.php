@@ -31,7 +31,8 @@ class GABT_Admin_Menu {
     public function add_admin_menu() {
         // Menu principale
         add_menu_page(
-            'Gestione Accessi BluTrasimeno',
+            'Gestione Accessi Blu Trasimeno',
+            'Gestione Accessi Blu Trasimeno',
             'manage_options',
             'gestione-accessi-bt',
             array($this->admin_pages, 'main_page'),
@@ -43,6 +44,7 @@ class GABT_Admin_Menu {
         add_submenu_page(
             'gestione-accessi-bt',
             'Dashboard',
+            'Dashboard',
             'manage_options',
             'gestione-accessi-bt',
             array($this->admin_pages, 'main_page')
@@ -51,6 +53,7 @@ class GABT_Admin_Menu {
         // Sottomenu - Nuova Prenotazione
         add_submenu_page(
             'gestione-accessi-bt',
+            'Nuova Prenotazione',
             'Nuova Prenotazione',
             'manage_options',
             'gestione-accessi-bt-new-booking',
@@ -61,6 +64,7 @@ class GABT_Admin_Menu {
         add_submenu_page(
             'gestione-accessi-bt',
             'Gestione Prenotazioni',
+            'Gestione Prenotazioni',
             'manage_options',
             'gestione-accessi-bt-manage-bookings',
             array($this->admin_pages, 'manage_bookings_page')
@@ -69,6 +73,7 @@ class GABT_Admin_Menu {
         // Sottomenu - Dettagli Prenotazione (nascosto dal menu)
         add_submenu_page(
             null, // parent_slug null = nascosto dal menu
+            'Dettagli Prenotazione',
             'Dettagli Prenotazione',
             'manage_options',
             'gestione-accessi-bt-booking-details',
@@ -79,6 +84,7 @@ class GABT_Admin_Menu {
         add_submenu_page(
             'gestione-accessi-bt',
             'Impostazioni',
+            'Impostazioni',
             'manage_options',
             'gestione-accessi-bt-settings',
             array($this->admin_pages, 'settings_page')
@@ -87,6 +93,7 @@ class GABT_Admin_Menu {
         // Sottomenu - Test Connessione
         add_submenu_page(
             'gestione-accessi-bt',
+            'Test Connessione',
             'Test Connessione',
             'manage_options',
             'gestione-accessi-bt-test',

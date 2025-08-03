@@ -288,7 +288,7 @@ add_action('admin_menu', function() {
     }
     
     add_menu_page(
-        'Gestione Accessi BT',
+        'Gestione Accessi BluTrasimeno',
         'manage_options',
         'gestione-accessi-bt',
         'gabt_admin_page_fallback',
